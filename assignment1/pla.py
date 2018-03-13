@@ -11,20 +11,19 @@ class PLA:
 
     # Dimension shared by feature vector X and weight vector W. 1 (bias constant) + 4 (feature count)
     dimension = 5
-    # Static training input file name. Assuming that training data is always available under the current directory
-    file_name = 'hw1_15_train.dat'
 
     @staticmethod
-    def get_training_samples():
+    def load_samples(file_name):
         """
-        Read training data from current directory, one line at a time.
+        Read and parse input data from current directory, one line at a time.
         Input format for line i: x_i0 x_i1 x_i2 y_i
 
+        :param file_name: Name of file containing samples, from the same directory
         :return Two matrices X, Y, containing features and labels for training samples, respectively
         """
         pwd = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
-        print('Reading training input file {} under path {}'.format(PLA.file_name, pwd))
-        with open(os.path.join(pwd, PLA.file_name)) as f:
+        print('Reading training input file {} under path {}'.format(file_name, pwd))
+        with open(os.path.join(pwd, file_name)) as f:
             samples = f.readlines()
             rows = len(samples)
 
@@ -43,6 +42,18 @@ class PLA:
                 y[i, 0] = np.int(sample[4])
 
         return x, y
+
+    @staticmethod
+    def get_index(n, shuffle):
+        """
+        Returns indices at which training samples will be examined
+        :param n: Size of indices
+        :param shuffle: Whether indices should be shuffled for random access
+        """
+        index = range(n)
+        if shuffle:
+            index = np.random.permutation(index)
+        return index
 
     @staticmethod
     def sign(x, w):
@@ -65,70 +76,37 @@ class PLA:
         :param y: Data frame of labels from training sample
         :param shuffle: Whether input samples should be shuffled
         :param step: Step size for PLA weight update
-        :return: final weight and number of iterations to convergence
-        :raise ArithmeticError if PLA fails to converge within 500 iterations
+        :return: Number of weight updates to convergence
+        :raise ArithmeticError if PLA fails to converge within 500 updates
         """
         # initialize w0
         w = np.zeros((PLA.dimension, 1))
-        # number of iterations
-        iterations = 0
+        # number of weight updates
+        updates = 0
         # whether PLA has converged (no labeling error for current w)
         converged = False
 
-        # explicitly supply an array of indices, to accommodate the potential need for input shuffling
-        index = range(len(x))
-        if shuffle:
-            # Can't use random.shuffle() because range object does not support assignment
-            index = random.sample(index, len(x))
+        index = PLA.get_index(len(x), shuffle)
         while not converged:
             # arbitrary stopping criteria in case PLA fails to converge
-            if iterations > 500:
-                raise ArithmeticError('PLA failed to converge after {} iterations!'.format(iterations))
+            if updates > 500:
+                raise ArithmeticError('PLA failed to converge after {} weight updates!'.format(updates))
             for i in index:
                 if PLA.sign(x[i], w) == y[i, 0]:
                     converged = True
                 else:
                     converged = False
                     # make correction to w
-                    w = w + step * y[i, 0] * np.matrix(x[i]).T
-                    iterations += 1
+                    w += step * y[i, 0] * np.matrix(x[i]).T
+                    updates += 1
 
             if converged:
                 break
 
-        return iterations
+        return updates
 
 
-# For local testing only
+# for local testing only
 if __name__ == '__main__':
-    # Training data can be read once and reused across invocations
-    x, y = PLA.get_training_samples()
-
-    # Question 15: No input shuffling, update step = 1
-    print('Question 15: Running PLA on training samples with update step 1 and no shuffling ...')
-    print('Number of iterations to PLA convergence: {}'.format(PLA.pla(x, y, False, 1)))
-    print()
-
-    # Question 16: Shuffled input, update step = 1, 2000 trials
-    print('Question 16: Running PLA on training samples with update step 1 and shuffled input ...')
-    iterations = []
-    for i in range(2000):
-        iterations.append(PLA.pla(x, y, True, 1))
-    print('Average number of iterations for PLA to converge with update step 1 and shuffled input {}'
-          .format(sum(iterations) / len(iterations)))
-    print()
-
-    # Question 17: Shuffled input, update step = 0.5, 2000 trials
-    print('Question 17: Running PLA on training samples with update step 0.5 and shuffled input ...')
-    iterations = []
-    for i in range(2000):
-        iterations.append(PLA.pla(x, y, True, 0.5))
-    print('Average number of iterations for PLA to converge with update step 0.5 and shuffled input {}'
-          .format(sum(iterations) / len(iterations)))
-    print()
-
-
-
-
-
-
+    x, y = PLA.load_samples('hw1_15_train.dat')
+    PLA.pla(x, y, False, 1)
