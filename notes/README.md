@@ -1,0 +1,3 @@
+Hoping to do a complete Markdown conversion for these notes after I'm done fixing any formatting/LaTex errors, and adding more references as I find useful.
+
+Huge thanks to [beaderchen](https://disqus.com/by/beaderchen/) and his [MLF notes](http://beader.me/mlnotebook/index.html). It really helped me in getting a grasp of all the VC-dimension related concepts (I'm still not super solid with them, but at least not at complete lost now :)).
